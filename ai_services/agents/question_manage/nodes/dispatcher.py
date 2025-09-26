@@ -45,7 +45,6 @@ class DispatcherNode(SmartOJNode):
     async def __call__(self, state: DispatcherMessagesState):
         messages = [self.prompt] + state["messages"]
         response = await self.llm.ainvoke(messages)
-        print(response)
         return {"next_node": response.next_node}
 
 
