@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # 每个图的每个节点对应的的 LLM 模型
     QUESTION_MANAGE_DISPATCHER_MODEL: str
     QUESTION_MANAGE_MEMORY_TIME_LIMIT_MODEL: str
+    QUESTION_MANAGE_TEST_MODEL: str
 
     # MCP 连接配置
     MCP_SERVER_URL: str

@@ -1,8 +1,6 @@
 from typing import Literal
 
 from langgraph.constants import END
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage
 from pydantic import BaseModel
 
 from core.node import SmartOJNode, SmartOJMessagesState
@@ -30,16 +28,14 @@ class DispatcherMessagesState(SmartOJMessagesState):
 
 
 class DispatcherNode(SmartOJNode):
+    model = settings.QUESTION_MANAGE_DISPATCHER_MODEL
+    api_key = settings.OPENAI_API_KEY
+    base_url = settings.OPENAI_BASE_URL
+    prompt_key = "question_manage.dispatcher"
+
     def __init__(self):
         super().__init__()
-        self.llm = ChatOpenAI(
-            model=settings.QUESTION_MANAGE_DISPATCHER_MODEL,
-            api_key=settings.OPENAI_API_KEY,
-            base_url=settings.OPENAI_BASE_URL,
-            extra_body={"enable_thinking": False}
-        ).with_structured_output(StructuredOutput)
-        system_prompt = settings.prompt_manager.get_prompt("question_manage.dispatcher")
-        self.prompt = SystemMessage(system_prompt)
+        self.llm = self.llm.with_structured_output(StructuredOutput)
 
     async def __call__(self, state: DispatcherMessagesState):
         messages = [self.prompt] + state["messages"]

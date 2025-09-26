@@ -1,6 +1,12 @@
-from core.node import SmartOJNode, SmartOJMessagesState
+from core.node import SmartOJNode
+from core.config import settings
 
 
 class TestNode(SmartOJNode):
-    async def __call__(self, state: SmartOJMessagesState):
-        return {"messages": [{"role": "assistant", "content": "test"}]}
+    effective_tools = {
+        "query_question_info", 
+        "query_tests_of_question", 
+        "create_test_for_question"
+    }
+    model = settings.QUESTION_MANAGE_TEST_MODEL
+    prompt_key = "question_manage.test"
