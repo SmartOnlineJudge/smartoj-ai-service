@@ -33,6 +33,7 @@ class DispatcherMessagesState(SmartOJMessagesState):
 
 class DispatcherNode(SmartOJNode):
     def __init__(self):
+        super().__init__()
         self.llm = ChatOpenAI(
             model=settings.QUESTION_MANAGE_DISPATCHER_MODEL,
             api_key=settings.OPENAI_API_KEY,
