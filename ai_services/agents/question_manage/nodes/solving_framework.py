@@ -1,7 +1,14 @@
-from core.node import SmartOJNode, SmartOJMessagesState
+from core.node import SmartOJNode
+from core.config import settings
 
 
 class SolvingFrameworkNode(SmartOJNode):
-    async def __call__(self, state: SmartOJMessagesState):
-        pass
+    effective_tools = {
+        "query_question_info", 
+        "query_all_programming_languages", 
+        "create_solving_framework_for_question",
+        "query_solving_frameworks_of_question"
+    }
+    model = settings.QUESTION_MANAGE_SOLVING_FRAMEWORK_MODEL
+    prompt_key = "question_manage.solving_framework"
     
