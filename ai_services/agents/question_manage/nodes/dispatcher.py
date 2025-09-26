@@ -11,11 +11,9 @@ from core.config import settings
 
 target_node_mapping = {
     "judge_template": "judge_template",
-    "language": "language",
     "memory_time_limit": "memory_time_limit",
     "question": "question",
     "solving_framework": "solving_framework",
-    "tag": "tag",
     "test": "test"
 }
 
