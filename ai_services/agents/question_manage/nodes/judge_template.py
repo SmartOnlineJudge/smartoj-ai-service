@@ -1,7 +1,47 @@
+from typing import Literal
+
+from pydantic import BaseModel
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, AIMessage
+from langchain_core.runnables import RunnableConfig
+
 from core.node import SmartOJNode, SmartOJMessagesState
+from core.config import settings
+
+
+ProgrammingLanguageType = Literal["c", "cpp", "java", "python", "javascript", "golang", None]
+
+
+class TargetLanguage(BaseModel):
+    language: ProgrammingLanguageType
 
 
 class JudgeTemplateNode(SmartOJNode):
-    async def __call__(self, state: SmartOJMessagesState):
-        pass
+    effective_tools = {
+        "query_question_info",
+        "query_all_programming_languages",
+        "query_solving_frameworks_of_question",
+        "query_tests_of_question",
+        "create_judge_template_for_question"
+    }
+    model = settings.QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL
+
+    def __init__(self):
+        super().__init__()
+        self.dispatcher_llm = ChatOpenAI(
+            model=settings.QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            extra_body={"enable_thinking": False}
+        ).with_structured_output(TargetLanguage)
+        self.dispathcer_llm_prompt = SystemMessage(settings.prompt_manager.get_prompt("question_manage.judge_template.dispatcher"))
+
+    async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
+        messages = [self.dispathcer_llm_prompt] + state["messages"]
+        response = await self.dispatcher_llm.ainvoke(messages, config)
+        target_language = response.language
+        if target_language is None:
+            return {"messages": [AIMessage(content="No language found")]}
+        self.prompt = SystemMessage(settings.prompt_manager.get_prompt(f"question_manage.judge_template.{target_language}"))
+        return await super().__call__(state, config)
     
