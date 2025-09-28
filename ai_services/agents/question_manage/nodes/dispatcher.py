@@ -31,8 +31,6 @@ class DispatcherMessagesState(SmartOJMessagesState):
 
 class DispatcherNode(SmartOJNode):
     model = settings.QUESTION_MANAGE_DISPATCHER_MODEL
-    api_key = settings.OPENAI_API_KEY
-    base_url = settings.OPENAI_BASE_URL
     prompt_key = "question_manage.dispatcher"
 
     def __init__(self):
