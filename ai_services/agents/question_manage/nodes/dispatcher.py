@@ -7,16 +7,18 @@ from core.node import SmartOJNode, SmartOJMessagesState
 from core.config import settings
 
 
-target_node_mapping = {
-    "judge_template": "judge_template",
-    "memory_time_limit": "memory_time_limit",
-    "question": "question",
-    "solving_framework": "solving_framework",
-    "test": "test"
-}
+path_map = [
+    "judge_template",
+    "memory_time_limit",
+    "question",
+    "solving_framework",
+    "test",
+    "planner",
+    END
+]
 
 
-NextNodeType = Literal["question", "judge_template", "language", "memory_time_limit", "solving_framework", "tag", "test"]
+NextNodeType = Literal["question", "judge_template", "memory_time_limit", "solving_framework", "test", "planner"]
 
 
 class StructuredOutput(BaseModel):
