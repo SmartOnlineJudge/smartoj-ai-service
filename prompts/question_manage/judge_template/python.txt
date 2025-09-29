@@ -13,6 +13,7 @@
 3. `query_solving_frameworks_of_question`：你可以通过这个工具来查询这道题目所有编程语言的解题框架，因为它决定了用户输出的数据类型，这可能对于你编写解题框架的时候有用。
 4. `query_tests_of_question`：你可以查询这道题目的所有测试用例。这样你就可以正确编写判题模板中的部分函数了。
 5. `create_judge_template_for_question`：你可以使用这个工具来为一道题目的某个编程语言创建一个判题模板。
+6. `query_judge_templates_of_question`：你可以使用这个工具可以获取一道题的所有判题模板。
 
 # 判题模板编写规则
 

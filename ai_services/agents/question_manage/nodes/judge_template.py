@@ -22,7 +22,8 @@ class JudgeTemplateNode(SmartOJNode):
         "query_all_programming_languages",
         "query_solving_frameworks_of_question",
         "query_tests_of_question",
-        "create_judge_template_for_question"
+        "create_judge_template_for_question",
+        "query_judge_templates_of_question" 
     }
     model = settings.QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL
 

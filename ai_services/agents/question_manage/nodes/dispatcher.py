@@ -1,5 +1,6 @@
 from typing import Literal
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.constants import END
 from pydantic import BaseModel
 
@@ -18,15 +19,12 @@ path_map = [
 ]
 
 
-NextNodeType = Literal["question", "judge_template", "memory_time_limit", "solving_framework", "test", "planner"]
+NextNodeType = Literal["question", "judge_template", "memory_time_limit", "solving_framework", "test", "planner", None]
 
 
 class StructuredOutput(BaseModel):
-    next_node: NextNodeType
-
-
-class DispatcherMessagesState(SmartOJMessagesState):
-    next_node: NextNodeType
+    assistant: NextNodeType
+    description: str
 
 
 class DispatcherNode(SmartOJNode):
@@ -37,13 +35,14 @@ class DispatcherNode(SmartOJNode):
         super().__init__()
         self.llm = self.llm.with_structured_output(StructuredOutput)
 
-    async def __call__(self, state: DispatcherMessagesState):
+    async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
         messages = [self.prompt] + state["messages"]
-        response = await self.llm.ainvoke(messages)
-        return {"next_node": response.next_node}
+        response = await self.llm.ainvoke(messages, config)
+        return {"assistant": response.assistant, "description": response.description}
 
 
-def dispatch_next_node(state: DispatcherMessagesState):
-    if not (next_node := state.get("next_node")):
+def dispatch_next_node(state: SmartOJMessagesState):
+    next_assistant = state.get("assistant")
+    if next_assistant is None:
         return END
-    return next_node
+    return next_assistant

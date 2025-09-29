@@ -1,6 +1,6 @@
 from langchain_core.tools import BaseTool
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import SystemMessage, AIMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
@@ -42,7 +42,10 @@ class SmartOJNode:
         if not tools:
             return {"messages": [AIMessage("No backend session id")]}
         agent = create_react_agent(self.llm, tools, prompt=self.prompt)
-        return await agent.ainvoke(state, config)
+        messages = state["messages"]
+        if state["description"]:
+            messages.append(HumanMessage(state["description"]))
+        return await agent.ainvoke({"messages": messages}, config)
 
     def filter_tools(self, tools: list[BaseTool]):
         """过滤出该结点应该使用的工具"""

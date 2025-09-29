@@ -25,7 +25,7 @@ class PlannerNode(SmartOJNode):
         self.llm = self.llm.with_structured_output(StructuredOutput)
 
     async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        messages = [self.prompt] + state["messages"]
+        messages = [self.prompt] + [HumanMessage(state["description"])]
         response = await self.llm.ainvoke(messages, config)
         plan_desctiption = []
         for i, step in enumerate(response.plan, start=1):
