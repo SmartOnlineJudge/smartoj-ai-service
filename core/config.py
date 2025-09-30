@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic_settings import BaseSettings
 
 from prompts.manager import PromptManager
@@ -22,6 +20,7 @@ class Settings(BaseSettings):
     QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL: str
     QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL: str
     QUESTION_MANAGE_PLANNER_MODEL: str
+    QUESTION_MANAGE_QUESTION_MODEL: str
 
     # MCP 连接配置
     MCP_SERVER_URL: str

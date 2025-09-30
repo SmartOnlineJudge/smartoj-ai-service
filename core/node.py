@@ -18,7 +18,7 @@ class SmartOJNode:
     model: str = ""
     api_key: str = settings.OPENAI_API_KEY
     base_url: str = settings.OPENAI_BASE_URL
-    llm_type: BaseChatModel = ChatOpenAI
+    llm_type: type[BaseChatModel] = ChatOpenAI
     prompt_key: str = ""
 
     def __init__(self):
