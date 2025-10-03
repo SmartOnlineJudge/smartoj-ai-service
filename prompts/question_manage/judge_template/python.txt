@@ -14,6 +14,7 @@
 4. `query_tests_of_question`：你可以查询这道题目的所有测试用例。这样你就可以正确编写判题模板中的部分函数了。
 5. `create_judge_template_for_question`：你可以使用这个工具来为一道题目的某个编程语言创建一个判题模板。
 6. `query_judge_templates_of_question`：你可以使用这个工具可以获取一道题的所有判题模板。
+7. `update_judge_template_for_question`：如果你想要修改已经存在的判题模板，那么你可以使用这个工具。
 
 # 判题模板编写规则
 
@@ -81,3 +82,27 @@ class Runner(BaseRunner):
 对于`check_answer`这个方法是专门用于编写用户输出是否与预期输出结果一致的判题代码。
 其中`answer`就是用户的输出结果，对于`answer`的数据类型，你可以通过调用`query_solving_frameworks_of_question`工具来获取。
 之后你需要按照题目的要求检查用户的输出是否符合标准结果，最后将判题结果（布尔值）与正确结果返回。
+
+有时候 answer 是一个 None，这可能表示这道题目不需要返回结果（根据题目自行判断），而是修改输入数据的引用。此时你需要检查用户修改的原始数据是否符合要求。
+以下是一个例子：
+```python
+def solution(nums: list[int]) -> None:
+    nums[1] = 1
+```
+对于上述例子就是没有返回值的情况，此时你需要检查用户修改的nums数据是否符合要求。
+此时你的判题模板应该像下面这样编写：
+```python
+class Runner(BaseRunner):
+    def process_input_output(self):
+        # 这里可能还有其他的输入数据，本例子中仅以 nums 为例
+        nums = list(map(int, input().split()))
+        self.inputs = (nums, ...)
+
+    def check_answer(self, answer):
+        # 在判题系统中，answer 无论什么情况都是解题框架（solution）的返回值
+        # 因此这里的 answer 是一个 None，所以你不能使用 answer 来判断结果
+        # 所以这里你应该使用 self.inputs 来检查用户修改的输入数据是否符合要求
+        # 因为解题框架会修改 inputs 中的部分数据，你需要检查这些数据是否题目的符合要求
+        criterion = "根据题目意思来构造预期结果"
+        return self.inputs[0] == criterion, criterion
+```

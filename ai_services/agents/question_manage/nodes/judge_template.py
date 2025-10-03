@@ -23,7 +23,8 @@ class JudgeTemplateNode(SmartOJNode):
         "query_solving_frameworks_of_question",
         "query_tests_of_question",
         "create_judge_template_for_question",
-        "query_judge_templates_of_question" 
+        "query_judge_templates_of_question",
+        "update_judge_template_for_question"
     }
     model = settings.QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL
 
@@ -42,7 +43,7 @@ class JudgeTemplateNode(SmartOJNode):
         response = await self.dispatcher_llm.ainvoke(messages, config)
         target_language = response.language
         if target_language is None:
-            return {"messages": [AIMessage(content="No language found")]}
+            return {"messages": [AIMessage(content="在操作判题模板前，需要先指定一个编程语言")]}
         self.prompt = SystemMessage(settings.prompt_manager.get_prompt(f"question_manage.judge_template.{target_language}"))
         return await super().__call__(state, config)
     

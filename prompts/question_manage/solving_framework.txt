@@ -10,6 +10,7 @@
 2. `query_all_programming_languages`：这个工具可以获取系统中所有编程语言的相关信息，你需要调用它才可以知道相关的编程语言信息。
 3. `create_solving_framework_for_question`：你可以使用这个工具来为一道题目的某个编程语言创建一个解题框架。
 4. `query_solving_frameworks_of_question`: 这个工具可以获取当前题目所有的解题框架。
+5. `update_solving_framework_for_question`：如果你想要修改已经存在的解题框架，那么你可以使用这个工具。
 
 # 解题框架编写规则
 解题框架需要按照每个编程语言的特性来进行编写，目的是充分发挥各个编程语言的特性以提高解题框架的作用。
