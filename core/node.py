@@ -14,7 +14,8 @@ MCP_SERVER_URL = settings.MCP_SERVER_URL
 
 
 class SmartOJNode:
-    effective_tools: set[str] = set()
+    """普通节点，不需要调用工具"""
+
     model: str = ""
     api_key: str = settings.OPENAI_API_KEY
     base_url: str = settings.OPENAI_BASE_URL
@@ -22,7 +23,6 @@ class SmartOJNode:
     prompt_key: str = ""
 
     def __init__(self):
-        self._tools: list[BaseTool] = []
         # 初始化 LLM
         self.llm = self.llm_type(
             model=self.model,
@@ -32,6 +32,19 @@ class SmartOJNode:
         )
         # 初始化系统提示词
         self.prompt = SystemMessage(settings.prompt_manager.get_prompt(self.prompt_key))
+
+    async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
+        raise NotImplementedError
+
+
+class SmartOJToolNode(SmartOJNode):
+    """需要调用工具的节点"""
+
+    effective_tools: set[str] = set()
+
+    def __init__(self):
+        super().__init__()
+        self._tools: list[BaseTool] = []
         self.mcp_connection_config = {
             "url": MCP_SERVER_URL, 
             "transport": "streamable_http"

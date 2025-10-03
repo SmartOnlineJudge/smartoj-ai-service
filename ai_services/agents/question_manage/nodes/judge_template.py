@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, AIMessage
 from langchain_core.runnables import RunnableConfig
 
-from core.node import SmartOJNode, SmartOJMessagesState
+from core.node import SmartOJToolNode, SmartOJMessagesState
 from core.config import settings
 
 
@@ -16,7 +16,7 @@ class TargetLanguage(BaseModel):
     language: ProgrammingLanguageType
 
 
-class JudgeTemplateNode(SmartOJNode):
+class JudgeTemplateNode(SmartOJToolNode):
     effective_tools = {
         "query_question_info",
         "query_all_programming_languages",

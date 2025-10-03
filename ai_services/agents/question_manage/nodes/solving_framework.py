@@ -1,8 +1,8 @@
-from core.node import SmartOJNode
+from core.node import SmartOJToolNode
 from core.config import settings
 
 
-class SolvingFrameworkNode(SmartOJNode):
+class SolvingFrameworkNode(SmartOJToolNode):
     effective_tools = {
         "query_question_info", 
         "query_all_programming_languages", 

@@ -1,8 +1,8 @@
-from core.node import SmartOJNode
+from core.node import SmartOJToolNode
 from core.config import settings
 
 
-class QuestionNode(SmartOJNode):
+class QuestionNode(SmartOJToolNode):
     effective_tools = {
         "query_question_info", 
         "create_question",
