@@ -1,9 +1,10 @@
+import asyncio
+
 from langchain_core.tools import BaseTool
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage, BaseMessage, ToolMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
-from langgraph.prebuilt import create_react_agent
 
 from mcp_tool_adapter import load_mcp_tools
 from core.config import settings
@@ -45,20 +46,50 @@ class SmartOJToolNode(SmartOJNode):
     def __init__(self):
         super().__init__()
         self._tools: list[BaseTool] = []
+        self._name2tool: dict[str, BaseTool] = {}
         self.mcp_connection_config = {
             "url": MCP_SERVER_URL, 
             "transport": "streamable_http"
         }
 
     async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        tools = await self.load_tools(config)
+        response = await self.call_llm_with_tools([HumanMessage(state["description"])], config)
+        assitant_name = state["assistant"]
+        response_content = response.content
+        message = f"我是<{assitant_name}>助手，以下是我对这个任务的完成结果：\n{response_content}"
+        return {"messages": [AIMessage(message)]}
+
+    @classmethod
+    async def process_tool_call(cls, tool_call: dict, name2tool: dict[str, BaseTool]):
+        tool = name2tool[tool_call['name']]
+        result = await tool.ainvoke(tool_call['args'])
+        return result, tool_call["id"]
+
+    async def call_all_tools(self, tool_calls: list[dict], name2tool: dict[str, BaseTool]):
+        tool_call_tasks = [self.process_tool_call(tool_call, name2tool) for tool_call in tool_calls]
+        tool_call_results = await asyncio.gather(*tool_call_tasks)
+        tool_messages = []
+        for result, tool_call_id in tool_call_results:
+            tool_messages.append(ToolMessage(result, tool_call_id=tool_call_id))
+        return tool_messages
+
+    async def call_llm_with_tools(self, messages: list[BaseMessage], config: RunnableConfig):
+        copied_messages = [self.prompt] + messages.copy()
+        tools, name2tool = await self.load_tools(config)
         if not tools:
             return {"messages": [AIMessage("No backend session id")]}
-        agent = create_react_agent(self.llm, tools, prompt=self.prompt)
-        messages = state["messages"]
-        if state["description"]:
-            messages.append(HumanMessage(state["description"]))
-        return await agent.ainvoke({"messages": messages}, config)
+        llm_with_tools = self.llm.bind_tools(tools)
+        # ReAct 过程：思考 - 行动 - 观察
+        response = await llm_with_tools.ainvoke(copied_messages, config)
+        tool_calls = response.tool_calls
+        copied_messages.append(response)
+        while tool_calls:
+            tool_messages = await self.call_all_tools(tool_calls, name2tool)
+            copied_messages.extend(tool_messages)
+            response = await llm_with_tools.ainvoke(copied_messages, config)
+            tool_calls = response.tool_calls
+            copied_messages.append(response)
+        return response  # 只返回最后一次模型的响应
 
     def filter_tools(self, tools: list[BaseTool]):
         """过滤出该结点应该使用的工具"""
@@ -69,8 +100,6 @@ class SmartOJToolNode(SmartOJNode):
         return filtered_tools
 
     async def load_tools(self, config: RunnableConfig):
-        if self._tools:
-            return self._tools
         backend_session_id = config["metadata"].get("backend-session-id")
         if not backend_session_id:
             return []
@@ -82,6 +111,9 @@ class SmartOJToolNode(SmartOJNode):
                 }
             }
         )
-        _tools = await load_mcp_tools(connection_config)
-        self._tools = self.filter_tools(_tools)
-        return self._tools
+        tools = await load_mcp_tools(connection_config)
+        tools = self.filter_tools(tools)
+        name2tool = {}
+        for tool in tools:
+            name2tool[tool.name] = tool
+        return tools, name2tool
