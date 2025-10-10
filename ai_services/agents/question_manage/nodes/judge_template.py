@@ -18,8 +18,6 @@ class TargetLanguage(BaseModel):
 
 class JudgeTemplateNode(SmartOJToolNode):
     effective_tools = {
-        "query_question_info",
-        "query_all_programming_languages",
         "query_solving_frameworks_of_question",
         "query_tests_of_question",
         "create_judge_template_for_question",
@@ -44,6 +42,5 @@ class JudgeTemplateNode(SmartOJToolNode):
         target_language = response.language
         if target_language is None:
             return {"messages": [AIMessage(content="在操作判题模板前，需要先指定一个编程语言")]}
-        self.prompt = SystemMessage(settings.prompt_manager.get_prompt(f"question_manage.judge_template.{target_language}"))
+        self.original_prompt = settings.prompt_manager.get_prompt(f"question_manage.judge_template.{target_language}")
         return await super().__call__(state, config)
-    

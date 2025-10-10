@@ -1,5 +1,6 @@
 import asyncio
 
+from langchain_core.prompts import SystemMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage, BaseMessage, ToolMessage
@@ -32,10 +33,22 @@ class SmartOJNode:
             extra_body={"enable_thinking": False}
         )
         # 初始化系统提示词
-        self.prompt = SystemMessage(settings.prompt_manager.get_prompt(self.prompt_key))
+        self.original_prompt = settings.prompt_manager.get_prompt(self.prompt_key)
+        self.prompt: SystemMessage = None
 
     async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
         raise NotImplementedError
+    
+    def build_prompt(self, state: SmartOJMessagesState, use_original_prompt: bool = False):
+        if self.prompt is not None:
+            return
+        if use_original_prompt:
+            prompt = SystemMessage(self.original_prompt)
+        else:
+            question_metadata = state.get("question_metadata", None)
+            prompt_template = SystemMessagePromptTemplate.from_template(self.original_prompt)
+            prompt = prompt_template.format(**question_metadata.model_dump())
+        self.prompt = prompt
 
 
 class SmartOJToolNode(SmartOJNode):
@@ -53,7 +66,8 @@ class SmartOJToolNode(SmartOJNode):
         }
 
     async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        response = await self.call_llm_with_tools([HumanMessage(state["description"])], config)
+        self.build_prompt(state)
+        response = await self.call_llm_with_tools([HumanMessage(state["task_description"])], config)
         assitant_name = state["assistant"]
         response_content = response.content
         message = f"我是<{assitant_name}>助手，以下是我对这个任务的完成结果：\n{response_content}"
@@ -77,7 +91,7 @@ class SmartOJToolNode(SmartOJNode):
         copied_messages = [self.prompt] + messages.copy()
         tools, name2tool = await self.load_tools(config)
         if not tools:
-            return {"messages": [AIMessage("No backend session id")]}
+            return AIMessage("No backend session id")
         llm_with_tools = self.llm.bind_tools(tools)
         # ReAct 过程：思考 - 行动 - 观察
         response = await llm_with_tools.ainvoke(copied_messages, config)

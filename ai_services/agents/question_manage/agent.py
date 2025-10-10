@@ -20,7 +20,7 @@ graph_builder.add_node("memory_time_limit", MemoryTimeLimitNode())
 graph_builder.add_node("test", TestNode())
 graph_builder.add_node("planner", PlannerNode())
 
-graph_builder.set_entry_point("dispatcher")
+graph_builder.set_entry_point("question")
 graph_builder.add_conditional_edges("dispatcher", dispatch_next_node, path_map)
 graph_builder.add_edge("question", "dispatcher")
 graph_builder.add_edge("judge_template", "dispatcher")

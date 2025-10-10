@@ -9,7 +9,7 @@ from core.config import settings
 
 class Step(BaseModel):
     assistant: str = Field(description="需要使用的助手名字")
-    description: str = Field(description="需要完成的任务的描述")
+    task_description: str = Field(description="需要完成的任务的描述")
 
 
 class StructuredOutput(BaseModel):
@@ -25,11 +25,12 @@ class PlannerNode(SmartOJNode):
         self.llm = self.llm.with_structured_output(StructuredOutput)
 
     async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        messages = [self.prompt] + [HumanMessage(state["description"])]
+        self.build_prompt(state, use_original_prompt=True)
+        messages = [self.prompt] + [HumanMessage(state["task_description"])]
         response = await self.llm.ainvoke(messages, config)
         plan_desctiption = []
         for i, step in enumerate(response.plan, start=1):
-            step_description = f"{i}. assistant: {step.assistant}, description: {step.description}\n"
+            step_description = f"{i}. assistant: {step.assistant}, task_description: {step.task_description}\n"
             plan_desctiption.append(step_description)
         plan_prompt = HumanMessage("请按照以下顺序来调用助手：\n" + "".join(plan_desctiption))
         return {"messages": [plan_prompt]}

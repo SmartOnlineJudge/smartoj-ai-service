@@ -4,8 +4,6 @@ from core.config import settings
 
 class MemoryTimeLimitNode(SmartOJToolNode):
     effective_tools = {
-        "query_question_info", 
-        "query_all_programming_languages", 
         "create_memory_time_limit_for_question",
         "query_memory_time_limits_of_question",
         "update_memory_time_limit_for_question"
