@@ -5,7 +5,7 @@ from core.config import settings
 from core.state import QuestionMetadata, SmartOJMessagesState
 
 
-class QuestionNode(SmartOJToolNode):
+class DataPreheatNode(SmartOJToolNode):
     effective_tools = {
         "query_question_info", 
         "create_question",
@@ -13,7 +13,7 @@ class QuestionNode(SmartOJToolNode):
         "query_all_programming_languages"
     }
     model = settings.QUESTION_MANAGE_QUESTION_MODEL
-    prompt_key = "question_manage.question"
+    prompt_key = "question_manage.data_preheat"
 
     async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
         self.build_prompt(state, use_original_prompt=True)
