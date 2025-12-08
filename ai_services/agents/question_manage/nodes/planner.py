@@ -28,9 +28,9 @@ class PlannerNode(SmartOJNode):
         self.build_prompt(state, use_original_prompt=True)
         messages = [self.prompt] + [HumanMessage(state["task_description"])]
         response = await self.llm.ainvoke(messages, config)
-        plan_desctiption = []
+        plan_description = []
         for i, step in enumerate(response.plan, start=1):
             step_description = f"{i}. assistant: {step.assistant}, task_description: {step.task_description}\n"
-            plan_desctiption.append(step_description)
-        plan_prompt = HumanMessage("请按照以下顺序来调用助手：\n" + "".join(plan_desctiption))
+            plan_description.append(step_description)
+        plan_prompt = HumanMessage("请按照以下顺序来调用助手：\n" + "".join(plan_description))
         return {"messages": [plan_prompt]}

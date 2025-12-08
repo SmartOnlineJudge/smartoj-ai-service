@@ -1,10 +1,11 @@
 import asyncio
 
 from langchain_core.prompts import SystemMessagePromptTemplate
-from langchain_core.tools import BaseTool
+from langchain.tools import BaseTool
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import SystemMessage, AIMessage, HumanMessage, BaseMessage, ToolMessage
-from langchain_core.language_models.chat_models import BaseChatModel
+from langchain.messages import SystemMessage, AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import BaseMessage
+from langchain.chat_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
 from mcp_tool_adapter import load_mcp_tools
@@ -30,7 +31,9 @@ class SmartOJNode:
             model=self.model,
             api_key=self.api_key,
             base_url=self.base_url,
-            extra_body={"enable_thinking": False}
+            extra_body={"enable_thinking": False},
+            # https://docs.langchain.com/oss/python/migrate/langchain-v1#default-message-format-for-openai-responses-api
+            output_version="v0"
         )
         # 初始化系统提示词
         self.original_prompt = settings.prompt_manager.get_prompt(self.prompt_key)
