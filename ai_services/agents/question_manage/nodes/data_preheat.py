@@ -1,22 +1,23 @@
 from langchain_core.runnables import RunnableConfig
+from langchain.agents import create_agent
 
-from core.node import SmartOJToolNode
-from core.config import settings
-from core.state import QuestionMetadata, SmartOJMessagesState
+from ai_services.agents.generic.json_parser import parse_json
+from utils.tool import load_tools_from_config
+from core.model import create_model
+from ..state import QuestionMetadata, QuestionManageMessagesState
+from ..config import agent_config
 
 
-class DataPreheatNode(SmartOJToolNode):
-    effective_tools = {
-        "query_question_info", 
-        "create_question",
-        "query_all_tags",
-        "query_all_programming_languages"
-    }
-    model = settings.QUESTION_MANAGE_QUESTION_MODEL
-    prompt_key = "question_manage.data_preheat"
-
-    async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        self.build_prompt(state, use_original_prompt=True)
-        response = await self.call_llm_with_tools(state["messages"], config)
-        question_metadata = QuestionMetadata.model_validate_json(response.content)
-        return {"question_metadata": question_metadata}
+async def data_preheat_node(state: QuestionManageMessagesState, config: RunnableConfig) -> QuestionManageMessagesState:
+    # 获取配置并创建模型
+    data_preheat_config = agent_config["data_preheat"]
+    model = create_model(data_preheat_config.model)
+    # 加载工具列表
+    tools = await load_tools_from_config(config, data_preheat_config.tools)
+    # 创建 Agent
+    agent = create_agent(model, tools, system_prompt=data_preheat_config.original_prompt)
+    output_state = await agent.ainvoke(state, config)
+    output_messages = output_state["messages"]
+    # 将结果解析为标准JSON字符串
+    question_metadata = await parse_json(output_messages[-1].content, QuestionMetadata)
+    return {"question_metadata": question_metadata}

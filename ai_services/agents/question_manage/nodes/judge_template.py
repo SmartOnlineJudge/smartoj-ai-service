@@ -1,46 +1,51 @@
 from typing import Literal
 
 from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, AIMessage
+from langchain.agents import create_agent
+from langchain.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.prompts import SystemMessagePromptTemplate
 from langchain_core.runnables import RunnableConfig
 
-from core.node import SmartOJToolNode, SmartOJMessagesState
+from utils.tool import load_tools_from_config
+from ..state import QuestionManageMessagesState
+from core.model import create_model
+from ..config import agent_config
 from core.config import settings
 
 
-ProgrammingLanguageType = Literal["c", "cpp", "java", "python", "javascript", "golang", None]
-
-
 class TargetLanguage(BaseModel):
-    language: ProgrammingLanguageType
+    language: Literal["c", "cpp", "java", "python", "javascript", "golang", None]
 
 
-class JudgeTemplateNode(SmartOJToolNode):
-    effective_tools = {
-        "query_solving_frameworks_of_question",
-        "query_tests_of_question",
-        "create_judge_template_for_question",
-        "query_judge_templates_of_question",
-        "update_judge_template_for_question"
-    }
-    model = settings.QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL
+async def get_language(state: QuestionManageMessagesState, config: RunnableConfig):
+    judge_template_dispatcher_config = agent_config["judge_template_dispatcher"]
+    model = create_model(judge_template_dispatcher_config.model, output_version=None).with_structured_output(TargetLanguage)
+    messages = [
+        SystemMessage(judge_template_dispatcher_config.original_prompt), 
+        HumanMessage(state["task_description"])
+    ]
+    response = await model.ainvoke(messages, config)
+    return response.language
 
-    def __init__(self):
-        super().__init__()
-        self.dispatcher_llm = ChatOpenAI(
-            model=settings.QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL,
-            api_key=self.api_key,
-            base_url=self.base_url,
-            extra_body={"enable_thinking": False}
-        ).with_structured_output(TargetLanguage)
-        self.dispathcer_llm_prompt = SystemMessage(settings.prompt_manager.get_prompt("question_manage.judge_template.dispatcher"))
 
-    async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        messages = [self.dispathcer_llm_prompt] + state["messages"]
-        response = await self.dispatcher_llm.ainvoke(messages, config)
-        target_language = response.language
-        if target_language is None:
-            return {"messages": [AIMessage(content="在操作判题模板前，需要先指定一个编程语言")]}
-        self.original_prompt = settings.prompt_manager.get_prompt(f"question_manage.judge_template.{target_language}")
-        return await super().__call__(state, config)
+async def judge_template_node(state: QuestionManageMessagesState, config: RunnableConfig) -> QuestionManageMessagesState:
+    language = await get_language(state, config)
+    if language is None:
+        return {"messages": [AIMessage("需要先指定编程语言才能进行后续操作")]}
+    judge_template_config = agent_config["judge_template"]
+    model = create_model(judge_template_config.model)
+    # 加载工具
+    tools = await load_tools_from_config(config, judge_template_config.tools)
+    # 从已有的题目数据构建系统提示词
+    question_metadata = state["question_metadata"]
+    original_prompt = settings.get_prompt(judge_template_config.prompt_key % language)
+    prompt_template = SystemMessagePromptTemplate.from_template(original_prompt)
+    system_prompt = prompt_template.format(**question_metadata.model_dump())
+    # 创建 Agent
+    agent = create_agent(model, tools, system_prompt=system_prompt)
+    output_state = await agent.ainvoke({"messages": [HumanMessage(state["task_description"])]}, config)
+    # 拿到 Agent 的最终执行结果并返回
+    last_message = output_state["messages"][-1]
+    response_content = last_message.content
+    message = f"我是<judge_template>助手，以下是我对这个任务的完成结果：\n{response_content}"
+    return {"messages": [AIMessage(message)]}

@@ -1,13 +1,27 @@
-from core.node import SmartOJToolNode
-from core.config import settings
+from langchain_core.runnables import RunnableConfig
+from langchain_core.prompts import SystemMessagePromptTemplate
+from langchain.agents import create_agent
+from langchain.messages import HumanMessage, AIMessage
+
+from utils.tool import load_tools_from_config
+from core.model import create_model
+from ..state import QuestionManageMessagesState
+from ..config import agent_config
 
 
-class SolvingFrameworkNode(SmartOJToolNode):
-    effective_tools = {
-        "create_solving_framework_for_question",
-        "query_solving_frameworks_of_question",
-        "update_solving_framework_for_question"
-    }
-    model = settings.QUESTION_MANAGE_SOLVING_FRAMEWORK_MODEL
-    prompt_key = "question_manage.solving_framework"
-    
+async def solving_framework_node(state: QuestionManageMessagesState, config: RunnableConfig) -> QuestionManageMessagesState:
+    solving_framework_config = agent_config["solving_framework"]
+    model = create_model(solving_framework_config.model)
+    tools = await load_tools_from_config(config, solving_framework_config.tools)
+    # 从已有的题目数据构建系统提示词
+    question_metadata = state["question_metadata"]
+    prompt_template = SystemMessagePromptTemplate.from_template(solving_framework_config.original_prompt)
+    system_prompt = prompt_template.format(**question_metadata.model_dump())
+    # 创建 Agent
+    agent = create_agent(model, tools, system_prompt=system_prompt)
+    output_state = await agent.ainvoke({"messages": [HumanMessage(state["task_description"])]}, config)
+    # 拿到 Agent 的最终执行结果并返回
+    last_message = output_state["messages"][-1]
+    response_content = last_message.content
+    message = f"我是<solving_framework>助手，以下是我对这个任务的完成结果：\n{response_content}"
+    return {"messages": [AIMessage(message)]}

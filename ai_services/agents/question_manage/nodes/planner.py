@@ -1,10 +1,11 @@
 from pydantic import BaseModel, Field
 
 from langchain_core.runnables import RunnableConfig
-from langchain_core.messages import HumanMessage
+from langchain.messages import HumanMessage, AIMessage
 
-from core.node import SmartOJNode, SmartOJMessagesState
-from core.config import settings
+from ..config import agent_config
+from ..state import QuestionManageMessagesState
+from core.model import create_model
 
 
 class Step(BaseModel):
@@ -16,21 +17,14 @@ class StructuredOutput(BaseModel):
     plan: list[Step]
 
 
-class PlannerNode(SmartOJNode):
-    model = settings.QUESTION_MANAGE_PLANNER_MODEL
-    prompt_key = "question_manage.planner"
-
-    def __init__(self):
-        super().__init__()
-        self.llm = self.llm.with_structured_output(StructuredOutput)
-
-    async def __call__(self, state: SmartOJMessagesState, config: RunnableConfig):
-        self.build_prompt(state, use_original_prompt=True)
-        messages = [self.prompt] + [HumanMessage(state["task_description"])]
-        response = await self.llm.ainvoke(messages, config)
-        plan_description = []
-        for i, step in enumerate(response.plan, start=1):
-            step_description = f"{i}. assistant: {step.assistant}, task_description: {step.task_description}\n"
-            plan_description.append(step_description)
-        plan_prompt = HumanMessage("请按照以下顺序来调用助手：\n" + "".join(plan_description))
-        return {"messages": [plan_prompt]}
+async def planner_node(state: QuestionManageMessagesState, config: RunnableConfig) -> QuestionManageMessagesState:
+    planner_config = agent_config["planner"]
+    model = create_model(planner_config.model).with_structured_output(StructuredOutput)
+    messages = [planner_config.original_prompt] + [HumanMessage(state["task_description"])]
+    response = await model.ainvoke(messages, config)
+    plan_description = []
+    for i, step in enumerate(response.plan, start=1):
+        step_description = f"{i}.assistant: {step.assistant}, task_description: {step.task_description}\n"
+        plan_description.append(step_description)
+    plan = "我是<planner>助手，我已经帮你规划好了各个助手的调用顺序了，请按照以下顺序来调用助手：\n" + "".join(plan_description)
+    return {"messages": [AIMessage(plan)]}

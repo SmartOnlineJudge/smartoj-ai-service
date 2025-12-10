@@ -20,7 +20,9 @@ class QuestionMetadata(BaseModel):
     languages: list[Language]
 
 
-class SmartOJMessagesState(MessagesState):
+class QuestionManageMessagesState(MessagesState):
+    # 题目元信息
+    question_metadata: Optional[QuestionMetadata]
+    # 下一个需要执行任务的Agent和任务描述
     assistant: Optional[str]
     task_description: Optional[str]
-    question_metadata: Optional[QuestionMetadata]
