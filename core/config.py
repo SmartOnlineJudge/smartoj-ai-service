@@ -38,6 +38,76 @@ class Settings(BaseSettings):
     # MCP 连接配置
     MCP_SERVER_URL: str
 
+    AGENTS_CONFIG_TEMPLATE: dict[str, dict[str, dict]] = {
+        "question_manage": {
+            "data_preheat": {
+                "model": "QUESTION_MANAGE_DATA_PREHEAT_MODEL",
+                "prompt_key": "question_manage.data_preheat",
+                "tools": {
+                    "query_question_info", 
+                    "create_question", 
+                    "query_all_tags", 
+                    "query_all_programming_languages"
+                }
+            },
+            "planner": {
+                "model": "QUESTION_MANAGE_PLANNER_MODEL",
+                "prompt_key": "question_manage.planner"
+            },
+            "dispatcher": {
+                "prompt_key": "question_manage.dispatcher",
+                "model": "QUESTION_MANAGE_DISPATCHER_MODEL"
+            },
+            "solving_framework": {
+                "prompt_key": "question_manage.solving_framework",
+                "tools": {
+                    "create_solving_framework_for_question",
+                    "query_solving_frameworks_of_question",
+                    "update_solving_framework_for_question"
+                },
+                "model": "QUESTION_MANAGE_SOLVING_FRAMEWORK_MODEL"
+            },
+            "judge_template": {
+                "prompt_key": "question_manage.judge_template.%s",
+                "tools": {
+                    "query_solving_frameworks_of_question",
+                    "query_tests_of_question",
+                    "create_judge_template_for_question",
+                    "query_judge_templates_of_question",
+                    "update_judge_template_for_question"
+                },
+                "model": "QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL"
+            },
+            "judge_template_dispatcher": {
+                "prompt_key": "question_manage.judge_template.dispatcher",
+                "model": "QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL"
+            },
+            "memory_time_limit": {
+                "prompt_key": "question_manage.memory_time_limit",
+                "tools": {
+                    "create_memory_time_limit_for_question",
+                    "query_memory_time_limits_of_question",
+                    "update_memory_time_limit_for_question"
+                },
+                "model": "QUESTION_MANAGE_MEMORY_TIME_LIMIT_MODEL"
+            },
+            "test": {
+                "prompt_key": "question_manage.test",
+                "tools": {
+                    "query_tests_of_question", 
+                    "create_test_for_question"
+                },
+                "model": "QUESTION_MANAGE_TEST_MODEL"
+            }
+        },
+        "generic": {
+            "json_parser": {
+                "prompt_key": "generic.json_parser",
+                "model": "GENERIC_JSON_PARSER_MODEL"
+            }
+        }
+    }
+
     class Config:
         env_file = ".env"
 
@@ -49,86 +119,32 @@ class Settings(BaseSettings):
 
     @property
     def agents_config(self):
+        """获取Agent配置（运行时构建）"""
         if self.__agents_config:
             return self.__agents_config
-        self.__agents_config = {
-            "question_manage": {
-                "data_preheat": AgentConfig(
-                    model=self.QUESTION_MANAGE_DATA_PREHEAT_MODEL, 
-                    prompt_key="question_manage.data_preheat",
-                    original_prompt=self.get_prompt("question_manage.data_preheat"),
-                    tools={
-                        "query_question_info", 
-                        "create_question", 
-                        "query_all_tags", 
-                        "query_all_programming_languages"
-                    }
-                ),
-                "planner": AgentConfig(
-                    model=self.QUESTION_MANAGE_PLANNER_MODEL,
-                    prompt_key="question_manage.planner",
-                    original_prompt=self.get_prompt("question_manage.planner"),
-                ),
-                "dispatcher": AgentConfig(
-                    model=self.QUESTION_MANAGE_DISPATCHER_MODEL,
-                    prompt_key="question_manage.dispatcher",
-                    original_prompt=self.get_prompt("question_manage.dispatcher"),
-                ),
-                "solving_framework": AgentConfig(
-                    model=self.QUESTION_MANAGE_SOLVING_FRAMEWORK_MODEL,
-                    prompt_key="question_manage.solving_framework",
-                    original_prompt=self.get_prompt("question_manage.solving_framework"),
-                    tools={
-                        "create_solving_framework_for_question",
-                        "query_solving_frameworks_of_question",
-                        "update_solving_framework_for_question"
-                    }
-                ),
-                "judge_template": AgentConfig(
-                    model=self.QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL,
-                    prompt_key="question_manage.judge_template.%s",
-                    original_prompt="",
-                    tools={
-                        "query_solving_frameworks_of_question",
-                        "query_tests_of_question",
-                        "create_judge_template_for_question",
-                        "query_judge_templates_of_question",
-                        "update_judge_template_for_question"
-                    }
-                ),
-                "judge_template_dispatcher": AgentConfig(
-                    model=self.QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL,
-                    prompt_key="question_manage.judge_template.dispatcher",
-                    original_prompt=self.get_prompt("question_manage.judge_template.dispatcher"),
-                ),
-                "memory_time_limit": AgentConfig(
-                    model=self.QUESTION_MANAGE_MEMORY_TIME_LIMIT_MODEL,
-                    prompt_key="question_manage.memory_time_limit",
-                    original_prompt=self.get_prompt("question_manage.memory_time_limit"),
-                    tools={
-                        "create_memory_time_limit_for_question",
-                        "query_memory_time_limits_of_question",
-                        "update_memory_time_limit_for_question"
-                    }
-                ),
-                "test": AgentConfig(
-                    model=self.QUESTION_MANAGE_TEST_MODEL,
-                    prompt_key="question_manage.test",
-                    original_prompt=self.get_prompt("question_manage.test"),
-                    tools={
-                        "query_tests_of_question", 
-                        "create_test_for_question"
-                    }
+        
+        for agent_type, agents in self.AGENTS_CONFIG_TEMPLATE.items():
+            self.__agents_config[agent_type] = {}
+            
+            for agent_name, config_template in agents.items():
+                # 从实例变量获取模型名
+                model_field = config_template.get("model")
+                model = getattr(self, model_field) if model_field else ""
+                
+                # 获取或生成原始提示词
+                prompt_key = config_template["prompt_key"]
+                if "%s" in prompt_key:  # 该提示词需要动态加载
+                    original_prompt = ""
+                else:
+                    original_prompt = self.get_prompt(prompt_key)
+                
+                # 创建AgentConfig
+                self.__agents_config[agent_type][agent_name] = AgentConfig(
+                    model=model,
+                    prompt_key=prompt_key,
+                    original_prompt=original_prompt,
+                    tools=config_template.get("tools", set())
                 )
-            },
-            "generic": {
-                "json_parser": AgentConfig(
-                    model=self.GENERIC_JSON_PARSER_MODEL,
-                    prompt_key="generic.json_parser",
-                    original_prompt=self.get_prompt("generic.json_parser"),
-                )
-            },
-        }
         return self.__agents_config
 
     def get_prompt(self, prompt_key: str) -> str:
