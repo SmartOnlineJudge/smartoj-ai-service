@@ -8,10 +8,16 @@ from core.config import settings
 agent_config = settings.get_agent_config("generic")["json_parser"]
 
 
-async def parse_json(content: str, schema: BaseModel | dict):
-    model = create_model(agent_config.model, output_version=None).with_structured_output(schema)
+async def parse_json(
+    content: str, 
+    schema: BaseModel | dict, 
+    streaming: bool = False,
+    method: str = "json_schema"
+):
+    model = create_model(agent_config.model, streaming=streaming)
+    structured_model = model.with_structured_output(schema, method=method)
     messages = [
         SystemMessage(agent_config.original_prompt),
-        HumanMessage("请将下面的文本转换成标准的JSON字符串：\n" + content)
+        HumanMessage("从下面的文本中提取出指定schema的JSON数据：\n" + content)
     ]
-    return await model.ainvoke(messages)
+    return await structured_model.ainvoke(messages)
