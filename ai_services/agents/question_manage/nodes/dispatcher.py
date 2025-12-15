@@ -21,6 +21,10 @@ path_map = [
 
 
 async def dispatcher_node(state: QuestionManageMessagesState, config: RunnableConfig) -> QuestionManageMessagesState:
+    # 仅聊天模式，不需要执行任务
+    question_metadata = state.get("question_metadata")
+    if question_metadata is None:
+        return {"plan": [Step(assistant=None, task_description="")]}
     writer = get_stream_writer()
     writer(create_node_call_log("dispatcher", "任务调度助手开始分配任务", "entry"))
     dispatcher_config = agent_config["dispatcher"]
