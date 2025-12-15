@@ -1,7 +1,9 @@
-from typing import Optional
+from typing import Optional, Literal, Annotated
+from operator import add
 
 from pydantic import BaseModel
-from langgraph.graph.message import MessagesState
+from langgraph.graph.message import MessagesState, add_messages
+from langchain.messages import AnyMessage
 
 
 class Language(BaseModel):
@@ -20,9 +22,15 @@ class QuestionMetadata(BaseModel):
     languages: list[Language]
 
 
+class Step(BaseModel):
+    assistant: Literal["judge_template", "memory_time_limit", "solving_framework", "test", "planner", None]
+    task_description: str
+
+
 class QuestionManageMessagesState(MessagesState):
     # 题目元信息
     question_metadata: Optional[QuestionMetadata]
-    # 下一个需要执行任务的Agent和任务描述
-    assistant: Optional[str]
-    task_description: Optional[str]
+    # 任务执行计划
+    plan: Annotated[list[Step], add]
+    # 展示给客户端的对话信息
+    display_messages: Annotated[list[AnyMessage], add_messages]

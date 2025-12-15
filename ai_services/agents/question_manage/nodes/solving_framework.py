@@ -23,10 +23,10 @@ async def solving_framework_node(state: QuestionManageMessagesState, config: Run
     system_prompt = prompt_template.format(**question_metadata.model_dump())
     # 创建 Agent
     agent = create_agent(model, tools, system_prompt=system_prompt, middleware=tool_call_node_middlewares)
-    output_state = await agent.ainvoke({"messages": [HumanMessage(state["task_description"])]}, config)
+    output_state = await agent.ainvoke({"messages": [HumanMessage(state["plan"][-1].task_description)]}, config)
     # 拿到 Agent 的最终执行结果并返回
     last_message = output_state["messages"][-1]
     response_content = last_message.content
     message = f"我是<solving_framework>助手，以下是我对这个任务的完成结果：\n{response_content}"
     writer(create_node_call_log("solving_framework", "解题框架助手执行任务完成", "finish"))
-    return {"messages": [AIMessage(message)]}
+    return {"messages": [AIMessage(message)], "display_messages": output_state["messages"][1:]}

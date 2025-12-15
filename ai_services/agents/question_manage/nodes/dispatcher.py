@@ -1,14 +1,11 @@
-from typing import Literal
-
 from langchain.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.constants import END
 from langgraph.config import get_stream_writer
-from pydantic import BaseModel
 
 from .node_log import create_node_call_log
 from ..config import agent_config
-from ..state import QuestionManageMessagesState
+from ..state import QuestionManageMessagesState, Step
 from core.model import create_model
 from ai_services.agents.generic.json_parser import parse_json
 
@@ -21,12 +18,6 @@ path_map = [
     "planner",
     END
 ]
-NextNodeType = Literal["judge_template", "memory_time_limit", "solving_framework", "test", "planner", None]
-
-
-class StructuredOutput(BaseModel):
-    assistant: NextNodeType
-    task_description: str
 
 
 async def dispatcher_node(state: QuestionManageMessagesState, config: RunnableConfig) -> QuestionManageMessagesState:
@@ -37,11 +28,15 @@ async def dispatcher_node(state: QuestionManageMessagesState, config: RunnableCo
     messages = [SystemMessage(dispatcher_config.original_prompt)] + state["messages"]
     response = await model.ainvoke(messages, config)
     writer(create_node_call_log("dispatcher", "任务调度助手分配任务完毕", "finish"))
-    return await parse_json(response.content, StructuredOutput)
+    step = await parse_json(response.content, Step)
+    return {"plan": [step]}
 
 
 def dispatch_next_node(state: QuestionManageMessagesState):
-    next_assistant = state.get("assistant")
-    if next_assistant is None:
+    plan = state.get("plan")
+    if plan is None:
         return END
-    return next_assistant
+    assistant = plan[-1].assistant
+    if assistant is None:
+        return END
+    return assistant

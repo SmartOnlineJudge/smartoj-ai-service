@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from langchain_core.runnables import RunnableConfig
 from langchain.messages import HumanMessage, AIMessage
@@ -6,13 +6,8 @@ from langgraph.config import get_stream_writer
 
 from .node_log import create_node_call_log
 from ..config import agent_config
-from ..state import QuestionManageMessagesState
+from ..state import QuestionManageMessagesState, Step
 from core.model import create_model
-
-
-class Step(BaseModel):
-    assistant: str = Field(description="需要使用的助手名字")
-    task_description: str = Field(description="需要完成的任务的描述")
 
 
 class StructuredOutput(BaseModel):
@@ -24,7 +19,7 @@ async def planner_node(state: QuestionManageMessagesState, config: RunnableConfi
     writer(create_node_call_log("planner", "任务规划助手开始执行任务", "entry"))
     planner_config = agent_config["planner"]
     model = create_model(planner_config.model).with_structured_output(StructuredOutput)
-    messages = [planner_config.original_prompt] + [HumanMessage(state["task_description"])]
+    messages = [planner_config.original_prompt] + [HumanMessage(state["plan"][-1].task_description)]
     response = await model.ainvoke(messages, config)
     plan_description = []
     for i, step in enumerate(response.plan, start=1):

@@ -30,4 +30,4 @@ async def data_preheat_node(state: QuestionManageMessagesState, config: Runnable
     # 将结果解析为标准JSON字符串
     question_metadata = await parse_json(output_messages[-1].content, QuestionMetadata)
     writer(create_node_call_log("data_preheat", "数据预助手处理任务完成", "finish"))
-    return {"question_metadata": question_metadata}
+    return {"question_metadata": question_metadata, "display_messages": output_state["messages"]}

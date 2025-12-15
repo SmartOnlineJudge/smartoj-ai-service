@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph
-from langgraph.types import Checkpointer
+from langgraph.checkpoint.mysql.asyncmy import AsyncMySaver
+from langgraph.store.mysql import AsyncMyStore
 
 from .nodes import (
     dispatcher_node, 
@@ -15,7 +16,7 @@ from .nodes import (
 from .state import QuestionManageMessagesState
 
 
-def build_question_manage_graph(checkpointer: Checkpointer = None, **kwargs):
+def build_question_manage_graph(checkpointer: AsyncMySaver = None, store: AsyncMyStore = None, **kwargs):
     graph_builder = StateGraph(QuestionManageMessagesState)
 
     graph_builder.add_node("dispatcher", dispatcher_node)
@@ -35,4 +36,4 @@ def build_question_manage_graph(checkpointer: Checkpointer = None, **kwargs):
     graph_builder.add_edge("test", "dispatcher")
     graph_builder.add_edge("planner", "dispatcher")
 
-    return graph_builder.compile(checkpointer, **kwargs)
+    return graph_builder.compile(checkpointer, store=store, **kwargs)
