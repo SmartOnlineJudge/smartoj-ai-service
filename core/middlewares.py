@@ -8,5 +8,10 @@ class ToolCallMonitorMiddleware(AgentMiddleware):
         writer = get_stream_writer()
         writer(request.tool_call)
         result = await handler(request)
-        writer({"name": request.tool_call["name"], "result": result.content, "type": "tool_call_result"})
+        writer({
+            "name": request.tool_call["name"], 
+            "result": result.content, 
+            "type": "tool_call_result",
+            "id": request.tool_call["id"]
+        })
         return result
