@@ -34,9 +34,16 @@ class Settings(BaseSettings):
     QUESTION_MANAGE_DATA_PREHEAT_MODEL: str
     # 通用 Agent LLM 配置
     GENERIC_JSON_PARSER_MODEL: str
+    GENERIC_CHAT_TITLE_GENERATOR_MODEL: str
 
     # MCP 连接配置
     MCP_SERVER_URL: str
+
+    # 后端接口地址
+    BACKEND_URL: str
+
+    # MySQL URI
+    DATABASE_URI: str
 
     AGENTS_CONFIG_TEMPLATE: dict[str, dict[str, dict]] = {
         "question_manage": {
