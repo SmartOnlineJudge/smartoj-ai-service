@@ -11,7 +11,7 @@ from ai_services.agents.generic.json_parser import parse_json
 
 
 path_map = [
-    "judge_template",
+    "judge_template_for_python",
     "memory_time_limit",
     "solving_framework",
     "test",

@@ -11,9 +11,7 @@
 - 题目ID：{question_id}
 - 题目标题：{question_title}
 - 题目描述：{question_description}
-- 题目难度：{question_difficulty}
-- 标签：{question_tags}
-- 所有编程语言列表：{languages}
+- Python编程语言ID：4
 
 # 你可以调用的工具列表
 1. `query_solving_frameworks_of_question`：你可以通过这个工具来查询这道题目所有编程语言的解题框架，因为它决定了用户输出的数据类型，这可能对于你编写解题框架的时候有用。

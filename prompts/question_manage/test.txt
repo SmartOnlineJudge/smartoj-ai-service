@@ -11,8 +11,6 @@
 - 题目标题：{question_title}
 - 题目描述：{question_description}
 - 题目难度：{question_difficulty}
-- 标签：{question_tags}
-- 所有编程语言列表：{languages}
 
 # 你可以调用的工具列表
 1. `query_tests_of_question`：这个工具可以获取当前题目所有已存在的测试用例，如果你不知道这道题目测试用例的格式，那么你可以调用这个工具看看。这样可以确保你的测试用例能够正确的被系统使用。

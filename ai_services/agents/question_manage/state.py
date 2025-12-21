@@ -6,24 +6,16 @@ from langgraph.graph.message import MessagesState, add_messages
 from langchain.messages import AnyMessage
 
 
-class Language(BaseModel):
-    id: int
-    name: str
-    version: str
-    is_deleted: bool
-
-
 class QuestionMetadata(BaseModel):
     question_id: int
     question_title: str
     question_description: str
     question_difficulty: str
     question_tags: list[str]
-    languages: list[Language]
 
 
 class Step(BaseModel):
-    assistant: Literal["judge_template", "memory_time_limit", "solving_framework", "test", "planner", None]
+    assistant: Literal["judge_template_for_python", "memory_time_limit", "solving_framework", "test", "planner", None]
     task_description: str
 
 

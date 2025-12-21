@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph
-from langgraph.checkpoint.mysql.asyncmy import AsyncMySaver
-from langgraph.store.mysql import AsyncMyStore
+from langgraph.checkpoint.mysql.aio_base import BaseAsyncMySQLSaver
+from langgraph.store.mysql.aio_base import BaseAsyncMySQLStore
 
 from .nodes import (
     dispatcher_node, 
@@ -9,19 +9,19 @@ from .nodes import (
     path_map,
     memory_time_limit_node,
     solving_framework_node,
-    judge_template_node,
+    judge_template_for_python_node,
     test_node,
     planner_node
 )
 from .state import QuestionManageMessagesState
 
 
-def build_question_manage_graph(checkpointer: AsyncMySaver = None, store: AsyncMyStore = None, **kwargs):
+def build_question_manage_graph(checkpointer: BaseAsyncMySQLSaver = None, store: BaseAsyncMySQLStore = None, **kwargs):
     graph_builder = StateGraph(QuestionManageMessagesState)
 
     graph_builder.add_node("dispatcher", dispatcher_node)
     graph_builder.add_node("data_preheat", data_preheat_node)
-    graph_builder.add_node("judge_template", judge_template_node)
+    graph_builder.add_node("judge_template_for_python", judge_template_for_python_node)
     graph_builder.add_node("solving_framework", solving_framework_node)
     graph_builder.add_node("memory_time_limit", memory_time_limit_node)
     graph_builder.add_node("test", test_node)
@@ -30,7 +30,7 @@ def build_question_manage_graph(checkpointer: AsyncMySaver = None, store: AsyncM
     graph_builder.set_entry_point("data_preheat")
     graph_builder.add_conditional_edges("dispatcher", dispatch_next_node, path_map)
     graph_builder.add_edge("data_preheat", "dispatcher")
-    graph_builder.add_edge("judge_template", "dispatcher")
+    graph_builder.add_edge("judge_template_for_python", "dispatcher")
     graph_builder.add_edge("solving_framework", "dispatcher")
     graph_builder.add_edge("memory_time_limit", "dispatcher")
     graph_builder.add_edge("test", "dispatcher")

@@ -25,12 +25,12 @@ async def data_preheat_node(state: QuestionManageMessagesState, config: Runnable
         system_prompt=data_preheat_config.original_prompt,
         middleware=tool_call_node_middlewares
     )
-    output_state = await agent.ainvoke(state, config)
+    output_state = await agent.ainvoke({"messages": [state["messages"][-1]]}, config)
     writer(create_node_call_log("data_preheat", "数据预助手处理任务完成", "finish"))
     output_messages = output_state["messages"]
     last_content = output_messages[-1].content
     # 不需要执行任务，仅聊天状态
-    if last_content[0] != "{":
+    if last_content[0] != "`":
         return {"display_messages": output_messages}
     # 将结果解析为标准JSON字符串
     question_metadata = await parse_json(last_content, QuestionMetadata)

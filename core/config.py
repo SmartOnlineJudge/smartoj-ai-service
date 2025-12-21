@@ -28,8 +28,7 @@ class Settings(BaseSettings):
     QUESTION_MANAGE_MEMORY_TIME_LIMIT_MODEL: str
     QUESTION_MANAGE_TEST_MODEL: str
     QUESTION_MANAGE_SOLVING_FRAMEWORK_MODEL: str
-    QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL: str
-    QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL: str
+    QUESTION_MANAGE_JUDGE_TEMPLATE_FOR_PYTHON_MODEL: str
     QUESTION_MANAGE_PLANNER_MODEL: str
     QUESTION_MANAGE_DATA_PREHEAT_MODEL: str
     # 通用 Agent LLM 配置
@@ -74,8 +73,8 @@ class Settings(BaseSettings):
                 },
                 "model": "QUESTION_MANAGE_SOLVING_FRAMEWORK_MODEL"
             },
-            "judge_template": {
-                "prompt_key": "question_manage.judge_template.%s",
+            "judge_template_for_python": {
+                "prompt_key": "question_manage.judge_template_for_python",
                 "tools": {
                     "query_solving_frameworks_of_question",
                     "query_tests_of_question",
@@ -83,11 +82,7 @@ class Settings(BaseSettings):
                     "query_judge_templates_of_question",
                     "update_judge_template_for_question"
                 },
-                "model": "QUESTION_MANAGE_JUDGE_TEMPLATE_MODEL"
-            },
-            "judge_template_dispatcher": {
-                "prompt_key": "question_manage.judge_template.dispatcher",
-                "model": "QUESTION_MANAGE_JUDGE_TEMPLATE_DISPATCHER_MODEL"
+                "model": "QUESTION_MANAGE_JUDGE_TEMPLATE_FOR_PYTHON_MODEL"
             },
             "memory_time_limit": {
                 "prompt_key": "question_manage.memory_time_limit",
@@ -140,10 +135,7 @@ class Settings(BaseSettings):
                 
                 # 获取或生成原始提示词
                 prompt_key = config_template["prompt_key"]
-                if "%s" in prompt_key:  # 该提示词需要动态加载
-                    original_prompt = ""
-                else:
-                    original_prompt = self.get_prompt(prompt_key)
+                original_prompt = self.get_prompt(prompt_key)
                 
                 # 创建AgentConfig
                 self.__agents_config[agent_type][agent_name] = AgentConfig(
