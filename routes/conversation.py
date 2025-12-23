@@ -10,6 +10,7 @@ from core.database import (
 )
 from core.user import get_admin_user, get_current_user
 from ai_services.agents.question_manage.agent import build_question_manage_graph
+from ai_services.agents.solving_assistant.agent import create_solving_assistant
 
 
 router = APIRouter(prefix="/conversation")
@@ -106,3 +107,25 @@ async def get_question_manage_agent_conversation_detail(
             message["result"] = message.pop("content")
         details.append(message)
     return {"details": details}
+
+
+@router.get("/detail/solving-assistant")
+async def get_solving_assistant_agent_conversation_detail(
+    question_id: int = Query(),
+    user: dict = Depends(get_current_user)
+):
+    conversations = await get_conversations_by_user_and_question(user["user_id"], question_id)
+    if not conversations:
+        return {"details": [], "thread_id": ""}
+    conversation = conversations[0]
+    config = RunnableConfig(configurable={"thread_id": conversation["thread_id"]})
+    async with langgraph_persistence_context() as (checkpointer, store):
+        graph = create_solving_assistant("", "", checkpointer, store)
+        snapshot = await graph.aget_state(config)
+    message_type_mapping = {"human": "user", "ai": "assistant"}
+    details = []
+    for message in snapshot.values["messages"]:
+        message = message.model_dump(include={"content", "type", "id"})
+        message["type"] = message_type_mapping[message.pop("type")]
+        details.append(message)
+    return {"details": details, "thread_id": conversation["thread_id"]}

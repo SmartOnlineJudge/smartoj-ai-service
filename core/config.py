@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     # 通用 Agent LLM 配置
     GENERIC_JSON_PARSER_MODEL: str
     GENERIC_CHAT_TITLE_GENERATOR_MODEL: str
+    # 智能刷题助手 LLM 配置
+    SOLVING_ASSISTANT_MODEL: str
 
     # MCP 连接配置
     MCP_SERVER_URL: str
@@ -106,6 +108,12 @@ class Settings(BaseSettings):
             "json_parser": {
                 "prompt_key": "generic.json_parser",
                 "model": "GENERIC_JSON_PARSER_MODEL"
+            }
+        },
+        "solving_assistant": {
+            "solving_assistant": {
+                "prompt_key": "solving_assistant.solving_assistant",
+                "model": "SOLVING_ASSISTANT_MODEL"
             }
         }
     }

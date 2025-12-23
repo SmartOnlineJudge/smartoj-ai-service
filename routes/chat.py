@@ -23,6 +23,7 @@ from core.request_states import (
 from utils.checkpointer import generate_thread_id
 from ai_services.agents.generic import generate_title
 from ai_services.agents.question_manage.agent import build_question_manage_graph
+from ai_services.agents.solving_assistant.agent import create_solving_assistant
 
 
 router = APIRouter(prefix="/chat")
@@ -123,6 +124,66 @@ async def invoke_question_manage_agent(
                 answer = "".join(assistant_messages)
                 title = await generate_title(query, answer)
                 await create_conversation(title, user_id, None, thread_id)
+            finally:
+                await stream_queue.put(None)
+
+    def task_done_callback(task: asyncio.Task) -> None:
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            logger.info("任务<%s>被取消", process_id)
+        except Exception as _:
+            logger.info("任务<%s>异常", process_id)
+            traceback.print_exc()
+        else:
+            logger.info("任务<%s>完成", process_id)
+        finally:
+            stream_queues.pop(process_id, None)
+            stream_tasks.pop(process_id, None)
+
+    task = asyncio.create_task(agent_invoke())
+    task.add_done_callback(task_done_callback)
+    stream_tasks[process_id] = task
+
+    return {"thread_id": thread_id}
+
+
+@router.post("/solving-assistant")
+async def invoke_solving_assistant_agent(
+    user: dict = Depends(get_current_user),
+    query: str = Body(),
+    question_description: str = Body(),
+    code: str = Body(),
+    question_id: int = Body(),
+    thread_id: str = Body(default_factory=generate_thread_id),
+    stream_queues: dict[str, asyncio.Queue] = Depends(get_stream_queues),
+    stream_tasks: dict[str, asyncio.Task] = Depends(get_stream_tasks)
+):
+    config = RunnableConfig(configurable={"thread_id": thread_id})
+    agent_input = {"messages": [HumanMessage(query)]}
+    stream_queue = asyncio.Queue(200)
+    user_id = user["user_id"]
+    process_id = thread_id + "-" + user_id
+    stream_queues[process_id] = stream_queue
+
+    async def agent_invoke():
+        async with langgraph_persistence_context() as (checkpointer, store):
+            agent = create_solving_assistant(question_description, code, checkpointer, store)
+            try:
+                async for message_chunk, _ in agent.astream(agent_input, config, stream_mode="messages"):
+                    content = message_chunk.content
+                    if not content:
+                        continue
+                    await stream_queue.put({
+                        "content": content,
+                        "id": message_chunk.id,
+                        "node": "solving_assistant",
+                        "type": "assistant"
+                    })
+                conversation = await get_conversation_by_thread_id(thread_id)
+                if conversation:
+                    return
+                await create_conversation("", user_id, question_id, thread_id)
             finally:
                 await stream_queue.put(None)
 
