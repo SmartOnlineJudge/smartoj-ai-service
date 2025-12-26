@@ -141,3 +141,57 @@ async def get_conversation_by_thread_id(thread_id: str) -> dict:
             await cursor.execute(sql, (thread_id,))
             conversation = await cursor.fetchone()
             return conversation or {}
+
+
+async def create_memories(memories: list[dict], user_id: str) -> list[int]:
+    sql = "INSERT INTO memories (user_id, content, type) VALUES (%s, %s, %s)"
+    results = []
+    async with ConnectionManager.connection() as conn:
+        async with conn.cursor() as cursor:
+            for memory in memories:
+                await cursor.execute(sql, (user_id, memory["content"], memory["type"]))
+                results.append(cursor.lastrowid)
+            await conn.commit()
+            return results
+
+
+async def get_memories_by_user(user_id: str) -> list[dict]:
+    sql = """
+        SELECT id, user_id, created_at, updated_at, content, type
+        FROM memories
+        WHERE user_id = %s
+        ORDER BY updated_at DESC
+    """
+    async with ConnectionManager.connection() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(sql, (user_id,))
+            return await cursor.fetchall()
+
+
+async def delete_memory(memory_id: int) -> bool:
+    sql = "DELETE FROM memories WHERE id = %s"
+    async with ConnectionManager.connection() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(sql, (memory_id,))
+            await conn.commit()
+            return cursor.rowcount > 0
+
+
+async def update_memory_content(memory_id: int, content: str) -> bool:
+    sql = "UPDATE memories SET content = %s WHERE id = %s"
+    async with ConnectionManager.connection() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(sql, (content, memory_id))
+            await conn.commit()
+            return cursor.rowcount > 0
+
+
+async def batch_update_memories(memories: list[dict]):
+    if not memories:
+        return
+    sql = "UPDATE memories SET content = %s WHERE id = %s"
+    async with ConnectionManager.connection() as conn:
+        async with conn.cursor() as cursor:
+            for memory in memories:
+                await cursor.execute(sql, (memory["content"], memory["id"]))
+            await conn.commit()

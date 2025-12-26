@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     GENERIC_CHAT_TITLE_GENERATOR_MODEL: str
     # 智能刷题助手 LLM 配置
     SOLVING_ASSISTANT_MODEL: str
+    # 个性化记忆 LLM 配置
+    PERSONALIZED_MEMORY_MODEL: str
 
     # MCP 连接配置
     MCP_SERVER_URL: str
@@ -114,6 +116,10 @@ class Settings(BaseSettings):
             "solving_assistant": {
                 "prompt_key": "solving_assistant.solving_assistant",
                 "model": "SOLVING_ASSISTANT_MODEL"
+            },
+            "personalized_memory": {
+                "prompt_key": "solving_assistant.personalized_memory",
+                "model": "PERSONALIZED_MEMORY_MODEL"
             }
         }
     }

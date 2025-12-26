@@ -7,6 +7,7 @@ from core.database import ConnectionManager, langgraph_persistence_context
 from core.config import settings
 from routes.chat import router as chat_router
 from routes.conversation import router as conversation_router
+from routes.memory import router as memory_router
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(chat_router)
 app.include_router(conversation_router)
+app.include_router(memory_router)
 
 
 if __name__ == "__main__":
