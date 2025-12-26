@@ -21,9 +21,9 @@ from core.request_states import (
     get_stream_tasks
 )
 from utils.checkpointer import generate_thread_id
-from ai_services.agents.generic import generate_title
-from ai_services.agents.question_manage.agent import build_question_manage_graph
-from ai_services.agents.solving_assistant.agent import create_solving_assistant
+from agents.generic import generate_title
+from agents.question_manage.agent import build_question_manage_graph
+from agents.solving_assistant.agent import create_solving_assistant
 
 
 router = APIRouter(prefix="/chat")

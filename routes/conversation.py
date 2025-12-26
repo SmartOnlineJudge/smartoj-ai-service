@@ -9,8 +9,8 @@ from core.database import (
     langgraph_persistence_context
 )
 from core.user import get_admin_user, get_current_user
-from ai_services.agents.question_manage.agent import build_question_manage_graph
-from ai_services.agents.solving_assistant.agent import create_solving_assistant
+from agents.question_manage.agent import build_question_manage_graph
+from agents.solving_assistant.agent import create_solving_assistant
 
 
 router = APIRouter(prefix="/conversation")

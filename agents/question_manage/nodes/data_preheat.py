@@ -2,7 +2,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain.agents import create_agent
 from langgraph.config import get_stream_writer
 
-from ai_services.agents.generic.json_parser import parse_json
+from agents.generic.json_parser import parse_json
 from utils.tool import load_tools_from_config
 from core.model import create_model
 from .node_log import create_node_call_log

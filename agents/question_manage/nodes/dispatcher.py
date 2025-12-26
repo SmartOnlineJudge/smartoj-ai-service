@@ -7,7 +7,7 @@ from .node_log import create_node_call_log
 from ..config import agent_config
 from ..state import QuestionManageMessagesState, Step
 from core.model import create_model
-from ai_services.agents.generic.json_parser import parse_json
+from agents.generic.json_parser import parse_json
 
 
 path_map = [

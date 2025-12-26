@@ -11,7 +11,7 @@ wheels/
 
 # Custom files
 test*.py
-!ai_services/agents/question_manage/nodes/test.py
+!agents/question_manage/nodes/test.py
 
 # IDE files
 .idea/
