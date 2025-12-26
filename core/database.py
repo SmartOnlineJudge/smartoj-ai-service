@@ -103,7 +103,7 @@ async def get_conversations_by_user_and_question(user_id: str, question_id: int 
         sql = """
             SELECT id, title, created_at, updated_at, user_id, question_id, thread_id 
             FROM conversations 
-            WHERE user_id = %s AND is_deleted = FALSE
+            WHERE user_id = %s AND question_id is NULL AND is_deleted = FALSE
             ORDER BY updated_at DESC
         """
         args = (user_id,)
