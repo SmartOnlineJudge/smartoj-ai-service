@@ -120,7 +120,7 @@ async def get_solving_assistant_agent_conversation_detail(
     conversation = conversations[0]
     config = RunnableConfig(configurable={"thread_id": conversation["thread_id"]})
     async with langgraph_persistence_context() as (checkpointer, store):
-        graph = create_solving_assistant("", "", checkpointer, store)
+        graph = create_solving_assistant(checkpointer, store)
         snapshot = await graph.aget_state(config)
     message_type_mapping = {"human": "user", "ai": "assistant"}
     details = []

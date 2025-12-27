@@ -53,7 +53,7 @@ async def create_or_update_memories(
     # 获取历史对话
     config = RunnableConfig(configurable={"thread_id": thread_id})
     async with langgraph_persistence_context() as (checkpointer, store):
-        solving_assistant = create_solving_assistant("", "", checkpointer, store)
+        solving_assistant = create_solving_assistant(checkpointer, store)
         state = await solving_assistant.aget_state(config)
         messages = state.values["messages"]
     # 构造对话字符串

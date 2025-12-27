@@ -21,3 +21,12 @@ def get_admin_user(user: dict = Depends(get_current_user)):
     if not user["is_superuser"]:
         raise HTTPException(status_code=403, detail="Forbidden")
     return user
+
+
+async def get_user_profile(session_id: str = Cookie()):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.get(settings.BACKEND_URL + "/recommendation/user-profile", cookies={"session_id": session_id})
+    if response.status_code == 401:
+        raise HTTPException(status_code=401, detail="Unauthorized Failed")
+    json_data = response.json()
+    return json_data["data"]

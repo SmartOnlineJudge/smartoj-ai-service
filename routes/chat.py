@@ -12,18 +12,20 @@ from core.database import (
     get_conversation_by_thread_id, 
     create_conversation, 
     update_conversation_title,
-    langgraph_persistence_context
+    langgraph_persistence_context,
+    get_memories_by_user
 )
-from core.user import get_admin_user, get_current_user
+from core.user import get_admin_user, get_current_user, get_user_profile
 from core.request_states import (
     get_interrupted_tasks,
     get_stream_queues,
     get_stream_tasks
 )
 from utils.checkpointer import generate_thread_id
+from utils.user_profile import user_profile_to_string
 from agents.generic import generate_title
 from agents.question_manage.agent import build_question_manage_graph
-from agents.solving_assistant.agent import create_solving_assistant
+from agents.solving_assistant.agent import create_solving_assistant, SolvingAssistantMessagesState
 
 
 router = APIRouter(prefix="/chat")
@@ -150,25 +152,37 @@ async def invoke_question_manage_agent(
 
 @router.post("/solving-assistant")
 async def invoke_solving_assistant_agent(
-    user: dict = Depends(get_current_user),
     query: str = Body(),
     question_description: str = Body(),
     code: str = Body(),
     question_id: int = Body(),
     thread_id: str = Body(default_factory=generate_thread_id),
+    user: dict = Depends(get_current_user),
+    user_profile: dict = Depends(get_user_profile),
     stream_queues: dict[str, asyncio.Queue] = Depends(get_stream_queues),
     stream_tasks: dict[str, asyncio.Task] = Depends(get_stream_tasks)
 ):
     config = RunnableConfig(configurable={"thread_id": thread_id})
-    agent_input = {"messages": [HumanMessage(query)]}
     stream_queue = asyncio.Queue(200)
     user_id = user["user_id"]
     process_id = thread_id + "-" + user_id
     stream_queues[process_id] = stream_queue
 
+    memories = await get_memories_by_user(user_id)
+    user_memory = ",".join([memory["content"] for memory in memories])
+
+    agent_input: SolvingAssistantMessagesState = {
+        "messages": [HumanMessage(query)],
+        "code": code,
+        "user_profile": user_profile_to_string(user_profile),
+        "user_memory": user_memory,
+        "username": user["name"],
+        "question_description": question_description
+    }
+
     async def agent_invoke():
         async with langgraph_persistence_context() as (checkpointer, store):
-            agent = create_solving_assistant(question_description, code, checkpointer, store)
+            agent = create_solving_assistant(checkpointer, store)
             try:
                 async for message_chunk, _ in agent.astream(agent_input, config, stream_mode="messages"):
                     content = message_chunk.content
