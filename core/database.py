@@ -143,6 +143,19 @@ async def get_conversation_by_thread_id(thread_id: str) -> dict:
             return conversation or {}
 
 
+async def get_conversation_count() -> int:
+    sql = """
+        SELECT COUNT(*) AS count
+        FROM conversations
+        WHERE is_deleted = FALSE
+    """
+    async with ConnectionManager.connection() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(sql)
+            result = await cursor.fetchone()
+            return result["count"]
+
+
 async def create_memories(memories: list[dict], user_id: str) -> list[int]:
     sql = "INSERT INTO memories (user_id, content, type) VALUES (%s, %s, %s)"
     results = []

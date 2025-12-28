@@ -6,7 +6,8 @@ from core.database import (
     get_conversations_by_user_and_question,
     update_conversation_title,
     delete_conversation,
-    langgraph_persistence_context
+    langgraph_persistence_context,
+    get_conversation_count
 )
 from core.user import get_admin_user, get_current_user
 from agents.question_manage.agent import build_question_manage_graph
@@ -129,3 +130,9 @@ async def get_solving_assistant_agent_conversation_detail(
         message["type"] = message_type_mapping[message.pop("type")]
         details.append(message)
     return {"details": details, "thread_id": conversation["thread_id"]}
+
+
+@router.get("/count")
+async def get_conversation_count_(_: dict = Depends(get_admin_user)):
+    count = await get_conversation_count()
+    return {"count": count}
